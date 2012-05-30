@@ -3,7 +3,13 @@ package Test::AnyEvent::Time;
 use warnings;
 use strict;
 
+use base ('Exporter');
+
 use AnyEvent;
+use Carp;
+use Test::More;
+
+our @EXPORT = qw(within_ok time_cmp_ok time_around_ok elapsed_time);
 
 =head1 NAME
 
@@ -40,20 +46,12 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =cut
 
-sub within_ok {
-    
-}
-
-sub time_cmp_ok {
-    
-}
-
-sub time_around_ok {
-    
-}
-
 sub elapsed_time {
-    my ($cb, $timeout) = @_;
+    my ($timeout, $cb) = @_;
+    if(!defined($cb)) {
+        $cb = $timeout;
+        undef $timeout;
+    }
     my $cv = AE::cv;
     my $w;
     my $timed_out = 0;
@@ -73,7 +71,50 @@ sub elapsed_time {
     return (AE::now - $before);
 }
 
+sub _arrange_args {
+    my ($timeout, $cb, $desc) = @_;
+    if(ref($timeout) eq 'CODE') {
+        $desc = $cb;
+        $cb = $timeout;
+        undef $timeout;
+    }
+    if(!defined($desc)) {
+        $desc = '';
+    }
+    return ($timeout, $cb, $desc);
+}
 
+sub time_cmp_ok {
+    my $op = shift;
+    my $cmp_time = shift;
+    my ($timeout, $cb, $desc) = _arrange_args(@_);
+    my $time = elapsed_time $timeout, $cb;
+    if(defined($time)) {
+        cmp_ok($time, $op, $cmp_time, $desc);
+    }else {
+        fail($desc);
+        diag("Operation timeout ($timeout sec)");
+    }
+}
+
+sub time_around_ok {
+    my $center_time = shift;
+    my $margin_time = shift;
+    my ($timeout, $cb, $desc) = _arrange_args(@_);
+    my $time = elapsed_time $timeout, $cb;
+    if(defined($time)) {
+        cmp_ok($time, '>=', $center_time - $margin_time, $desc);
+        cmp_ok($time, '<=', $center_time + $margin_time, $desc);
+    }else {
+        fail($desc);
+        diag("Operation timeout ($timeout sec)");
+    }
+}
+
+sub within_ok {
+    my ($time, $cb, $desc) = @_;
+    time_cmp_ok('<=', $time, $time, $cb, $desc);
+}
 
 =head1 AUTHOR
 
