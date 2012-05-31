@@ -52,6 +52,12 @@ sub elapsed_time {
         $cb = $timeout;
         undef $timeout;
     }
+    if(!defined($cb)) {
+        return undef;
+    }
+    if(ref($cb) ne 'CODE') {
+        return undef;
+    }
     my $cv = AE::cv;
     my $w;
     my $timed_out = 0;
@@ -66,7 +72,7 @@ sub elapsed_time {
     $cb->($cv);
     $cv->recv();
     if($timed_out) {
-        return undef;
+        return -1;
     }
     return (AE::now - $before);
 }
@@ -89,11 +95,14 @@ sub time_cmp_ok {
     my $cmp_time = shift;
     my ($timeout, $cb, $desc) = _arrange_args(@_);
     my $time = elapsed_time $timeout, $cb;
-    if(defined($time)) {
-        cmp_ok($time, $op, $cmp_time, $desc);
-    }else {
+    if(!defined($time)) {
+        fail($desc);
+        diag("Invalid arguments.");
+    }elsif($time < 0) {
         fail($desc);
         diag("Operation timeout ($timeout sec)");
+    }else {
+        cmp_ok($time, $op, $cmp_time, $desc);
     }
 }
 
@@ -102,12 +111,15 @@ sub time_around_ok {
     my $margin_time = shift;
     my ($timeout, $cb, $desc) = _arrange_args(@_);
     my $time = elapsed_time $timeout, $cb;
-    if(defined($time)) {
-        cmp_ok($time, '>=', $center_time - $margin_time, $desc);
-        cmp_ok($time, '<=', $center_time + $margin_time, $desc);
-    }else {
+    if(!defined($time)) {
+        fail($desc);
+        diag("Invalid arguments.");
+    }elsif($time < 0) {
         fail($desc);
         diag("Operation timeout ($timeout sec)");
+    }else {
+        cmp_ok($time, '>=', $center_time - $margin_time, $desc);
+        cmp_ok($time, '<=', $center_time + $margin_time, $desc);
     }
 }
 
