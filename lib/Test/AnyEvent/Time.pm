@@ -7,9 +7,25 @@ use base ('Exporter');
 
 use AnyEvent;
 use Carp;
-use Test::More;
+use Test::Builder;
 
 our @EXPORT = qw(within_ok time_cmp_ok time_around_ok elapsed_time);
+
+my $Tester = Test::Builder->new();
+
+
+## ** borrowed from Test::Exception
+sub import {
+    my $self = shift;
+    if( @_ ) {
+        my $package = caller;
+        $Tester->exported_to($package);
+        $Tester->plan( @_ );
+    }
+    $self->export_to_level( 1, $self, $_ ) foreach @EXPORT;
+}
+
+
 
 =head1 NAME
 
@@ -96,13 +112,13 @@ sub time_cmp_ok {
     my ($timeout, $cb, $desc) = _arrange_args(@_);
     my $time = elapsed_time $timeout, $cb;
     if(!defined($time)) {
-        fail($desc);
-        diag("Invalid arguments.");
+        $Tester->ok(0, $desc);
+        $Tester->diag("Invalid arguments.");
     }elsif($time < 0) {
-        fail($desc);
-        diag("Operation timeout ($timeout sec)");
+        $Tester->ok(0, $desc);
+        $Tester->diag("Operation timeout ($timeout sec)");
     }else {
-        cmp_ok($time, $op, $cmp_time, $desc);
+        $Tester->cmp_ok($time, $op, $cmp_time, $desc);
     }
 }
 
@@ -112,14 +128,14 @@ sub time_around_ok {
     my ($timeout, $cb, $desc) = _arrange_args(@_);
     my $time = elapsed_time $timeout, $cb;
     if(!defined($time)) {
-        fail($desc);
-        diag("Invalid arguments.");
+        $Tester->ok(0, $desc);
+        $Tester->diag("Invalid arguments.");
     }elsif($time < 0) {
-        fail($desc);
-        diag("Operation timeout ($timeout sec)");
+        $Tester->ok(0, $desc);
+        $Tester->diag("Operation timeout ($timeout sec)");
     }else {
-        cmp_ok($time, '>=', $center_time - $margin_time, $desc);
-        cmp_ok($time, '<=', $center_time + $margin_time, $desc);
+        $Tester->cmp_ok($time, '>=', $center_time - $margin_time, $desc);
+        $Tester->cmp_ok($time, '<=', $center_time + $margin_time, $desc);
     }
 }
 
