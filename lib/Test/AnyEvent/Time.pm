@@ -123,20 +123,8 @@ sub time_cmp_ok {
 }
 
 sub time_around_ok {
-    my $center_time = shift;
-    my $margin_time = shift;
-    my ($timeout, $cb, $desc) = _arrange_args(@_);
-    my $time = elapsed_time $timeout, $cb;
-    if(!defined($time)) {
-        $Tester->ok(0, $desc);
-        $Tester->diag("Invalid arguments.");
-    }elsif($time < 0) {
-        $Tester->ok(0, $desc);
-        $Tester->diag("Operation timeout ($timeout sec)");
-    }else {
-        $Tester->cmp_ok($time, '>=', $center_time - $margin_time, $desc);
-        $Tester->cmp_ok($time, '<=', $center_time + $margin_time, $desc);
-    }
+    my ($center_time, $margin_time, $cb, $desc) = @_;
+    time_cmp_ok('>=', $center_time - $margin_time, $center_time + $margin_time, $cb, $desc);
 }
 
 sub within_ok {
