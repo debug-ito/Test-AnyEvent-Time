@@ -9,7 +9,7 @@ use AnyEvent;
 use Carp;
 use Test::Builder;
 
-our @EXPORT = qw(within_ok time_cmp_ok time_around_ok elapsed_time);
+our @EXPORT = qw(time_within_ok time_cmp_ok time_around_ok elapsed_time);
 
 my $Tester = Test::Builder->new();
 
@@ -110,26 +110,33 @@ sub time_cmp_ok {
     my $op = shift;
     my $cmp_time = shift;
     my ($timeout, $cb, $desc) = _arrange_args(@_);
+    if(!defined($op) || !defined($cb) || !defined($cmp_time)) {
+        $Tester->ok(0, $desc);
+        $Tester->diag("Invalid arguments.");
+        return 0;
+    }
     my $time = elapsed_time $timeout, $cb;
     if(!defined($time)) {
         $Tester->ok(0, $desc);
         $Tester->diag("Invalid arguments.");
+        return 0;
     }elsif($time < 0) {
         $Tester->ok(0, $desc);
-        $Tester->diag("Operation timeout ($timeout sec)");
+        $Tester->diag("Timeout ($timeout sec)");
+        return 0;
     }else {
-        $Tester->cmp_ok($time, $op, $cmp_time, $desc);
+        return $Tester->cmp_ok($time, $op, $cmp_time, $desc);
     }
 }
 
 sub time_around_ok {
     my ($center_time, $margin_time, $cb, $desc) = @_;
-    time_cmp_ok('>=', $center_time - $margin_time, $center_time + $margin_time, $cb, $desc);
+    return time_cmp_ok('>=', $center_time - $margin_time, $center_time + $margin_time, $cb, $desc);
 }
 
-sub within_ok {
+sub time_within_ok {
     my ($time, $cb, $desc) = @_;
-    time_cmp_ok('<=', $time, $time, $cb, $desc);
+    return time_cmp_ok('<=', $time, $time, $cb, $desc);
 }
 
 =head1 AUTHOR
