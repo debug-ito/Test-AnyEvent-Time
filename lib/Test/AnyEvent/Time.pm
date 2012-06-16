@@ -7,6 +7,7 @@ use base ('Exporter');
 
 use AnyEvent;
 use Carp;
+use Scalar::Util qw(looks_like_number);
 use Test::Builder;
 
 our @EXPORT = qw(time_within_ok time_cmp_ok time_between_ok elapsed_time);
@@ -93,29 +94,13 @@ sub elapsed_time {
     return (AE::now - $before);
 }
 
-## sub _arrange_args {
-##     my ($timeout, $cb, $desc) = @_;
-##     if(ref($timeout) eq 'CODE') {
-##         $desc = $cb;
-##         $cb = $timeout;
-##         undef $timeout;
-##     }
-##     if(!defined($desc)) {
-##         $desc = '';
-##     }
-##     return ($timeout, $cb, $desc);
-## }
-
 sub time_cmp_ok {
     my ($cb, $op, $cmp_time, $timeout, $desc) = @_;
-    if(!defined($desc)) {
+    if(!defined($desc) && defined($timeout) && !looks_like_number($timeout)) {
         $desc = $timeout;
         $timeout = undef;
     }
-    ## my $op = shift;
-    ## my $cmp_time = shift;
-    ## my ($timeout, $cb, $desc) = _arrange_args(@_);
-    if(!defined($op) || !defined($cb) || !defined($cmp_time)) {
+    if(!defined($op) || !defined($cb) || !defined($cmp_time) || ref($cb) ne "CODE") {
         $Tester->ok(0, $desc);
         $Tester->diag("Invalid arguments.");
         return 0;
