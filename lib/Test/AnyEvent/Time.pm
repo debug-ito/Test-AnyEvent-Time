@@ -131,11 +131,16 @@ sub time_cmp_ok {
 
 sub time_around_ok {
     my ($center_time, $margin_time, $cb, $desc) = @_;
-    return time_cmp_ok('>=', $center_time - $margin_time, $center_time + $margin_time, $cb, $desc);
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    if(!defined($center_time) || !defined($margin_time)) {
+        return time_cmp_ok('>', undef, undef, $cb, $desc);
+    }
+    return time_cmp_ok('>', $center_time - $margin_time, $center_time + $margin_time, $cb, $desc);
 }
 
 sub time_within_ok {
     my ($time, $cb, $desc) = @_;
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     return time_cmp_ok('<=', $time, $time, $cb, $desc);
 }
 
