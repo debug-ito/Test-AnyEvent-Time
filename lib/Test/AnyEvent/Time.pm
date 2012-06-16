@@ -9,7 +9,7 @@ use AnyEvent;
 use Carp;
 use Test::Builder;
 
-our @EXPORT = qw(time_within_ok time_cmp_ok time_around_ok elapsed_time);
+our @EXPORT = qw(time_within_ok time_cmp_ok time_between_ok elapsed_time);
 
 my $Tester = Test::Builder->new();
 
@@ -134,13 +134,10 @@ sub time_cmp_ok {
     }
 }
 
-sub time_around_ok {
-    my ($cb, $center_time, $margin_time, $desc) = @_;
+sub time_between_ok {
+    my ($cb, $min_time, $max_time, $desc) = @_;
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    if(!defined($center_time) || !defined($margin_time)) {
-        return time_cmp_ok($cb, '>', undef, undef, $desc);
-    }
-    return time_cmp_ok($cb, '>', $center_time - $margin_time, $center_time + $margin_time, $desc);
+    return time_cmp_ok($cb, '>', $min_time, $max_time, $desc);
 }
 
 sub time_within_ok {
