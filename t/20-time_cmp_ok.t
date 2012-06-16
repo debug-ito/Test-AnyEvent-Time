@@ -50,13 +50,27 @@ sub check_ok {
     call_time_cmp(1, $got_time, $op, $ref_time, $timeout, $desc);
 }
 
+sub test_err_wrong_time {
+    my ($op, $ref_time) = @_;
+    test_err qr!# +'[^']+' *\n!;
+    test_err qr!# +$op *\n!;
+    test_err qr!# +'$ref_time' *\n?!;
+}
+
+sub test_err_timeout {
+    my ($timeout) = @_;
+    test_err qr!# +Timeout \($timeout sec\) *\n!;
+}
+
+sub test_err_invalid {
+    test_err qr!# +Invalid arguments\. *\n!;
+}
+
 sub check_wrong_time {
     my ($got_time, $op, $ref_time, $timeout, $desc) = @_;
     call_time_cmp(
         0, $got_time, $op, $ref_time, $timeout, $desc, sub {
-            test_err qr!# +'[^']+' *\n!;
-            test_err qr!# +$op *\n!;
-            test_err qr!# +'$ref_time' *\n?!;
+            test_err_wrong_time($op, $ref_time);
         }
     );
 }
@@ -65,7 +79,7 @@ sub check_timeout {
     my ($got_time, $op, $ref_time, $timeout, $desc) = @_;
     call_time_cmp(
         0, $got_time, $op, $ref_time, $timeout, $desc, sub {
-            test_err qr!# +Timeout \($timeout sec\) *\n!;
+            test_err_timeout($timeout);
         }
     );
 }
@@ -74,7 +88,7 @@ sub check_invalid {
     my ($got_time, $op, $ref_time, $timeout, $desc) = @_;
     call_time_cmp(
         0, $got_time, $op, $ref_time, $timeout, $desc, sub {
-            test_err qr!# +Invalid arguments\. *\n!;
+            test_err_invalid();
         }
     );
 }
@@ -112,5 +126,35 @@ check_invalid undef, ">", 0.4;
 check_invalid 1, undef, 0.2;
 check_invalid 5, "==";
 check_invalid undef, "<", 3, 2.5;
+
+note("-- time_around_ok");
+test_out("ok 1 - around");
+time_around_ok(0.6, 0.2, timer(0.6), "around");
+test_test("time_around_ok: ok");
+
+test_out("not ok 1 - too long");
+test_fail(+1);
+time_around_ok(0.6, 0.2, timer(5), "too long");
+test_err_timeout(0.8);
+test_test("time_around_ok: not ok: too long");
+
+test_out("not ok 1 - too short");
+test_fail(+1);
+time_around_ok(0.6, 0.2, timer(0), "too short");
+test_err_wrong_time(">", 0.4);
+test_test("time_around_ok: not ok: too short");
+
+test_out("not ok 1 - ");
+test_fail(+1);
+time_around_ok();
+test_err_invalid();
+test_test("time_around_ok: not ok: invalid");
+
+test_out("not ok 1 - ");
+test_fail(+1);
+time_around_ok(3, 0.5);
+test_err_invalid();
+test_test("time_around_ok: not ok: invalid");
+
 
 done_testing();
