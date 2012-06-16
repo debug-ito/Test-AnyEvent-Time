@@ -93,23 +93,28 @@ sub elapsed_time {
     return (AE::now - $before);
 }
 
-sub _arrange_args {
-    my ($timeout, $cb, $desc) = @_;
-    if(ref($timeout) eq 'CODE') {
-        $desc = $cb;
-        $cb = $timeout;
-        undef $timeout;
-    }
-    if(!defined($desc)) {
-        $desc = '';
-    }
-    return ($timeout, $cb, $desc);
-}
+## sub _arrange_args {
+##     my ($timeout, $cb, $desc) = @_;
+##     if(ref($timeout) eq 'CODE') {
+##         $desc = $cb;
+##         $cb = $timeout;
+##         undef $timeout;
+##     }
+##     if(!defined($desc)) {
+##         $desc = '';
+##     }
+##     return ($timeout, $cb, $desc);
+## }
 
 sub time_cmp_ok {
-    my $op = shift;
-    my $cmp_time = shift;
-    my ($timeout, $cb, $desc) = _arrange_args(@_);
+    my ($cb, $op, $cmp_time, $timeout, $desc) = @_;
+    if(!defined($desc)) {
+        $desc = $timeout;
+        $timeout = undef;
+    }
+    ## my $op = shift;
+    ## my $cmp_time = shift;
+    ## my ($timeout, $cb, $desc) = _arrange_args(@_);
     if(!defined($op) || !defined($cb) || !defined($cmp_time)) {
         $Tester->ok(0, $desc);
         $Tester->diag("Invalid arguments.");
@@ -130,18 +135,18 @@ sub time_cmp_ok {
 }
 
 sub time_around_ok {
-    my ($center_time, $margin_time, $cb, $desc) = @_;
+    my ($cb, $center_time, $margin_time, $desc) = @_;
     local $Test::Builder::Level = $Test::Builder::Level + 1;
     if(!defined($center_time) || !defined($margin_time)) {
-        return time_cmp_ok('>', undef, undef, $cb, $desc);
+        return time_cmp_ok($cb, '>', undef, undef, $desc);
     }
-    return time_cmp_ok('>', $center_time - $margin_time, $center_time + $margin_time, $cb, $desc);
+    return time_cmp_ok($cb, '>', $center_time - $margin_time, $center_time + $margin_time, $desc);
 }
 
 sub time_within_ok {
-    my ($time, $cb, $desc) = @_;
+    my ($cb, $time, $desc) = @_;
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    return time_cmp_ok('<=', $time, $time, $cb, $desc);
+    return time_cmp_ok($cb, '<', $time, $time, $desc);
 }
 
 =head1 AUTHOR
