@@ -1,7 +1,7 @@
 
 use strict;
 use warnings;
-use Test::More;
+use Test::More tests => 26;
 
 BEGIN {
     use_ok('Test::AnyEvent::Time');
@@ -65,9 +65,6 @@ cmp_ok(elapsed_time(1.4, delays_cb(0.4, 0.2, 0, 1.8, 2.2, 0.9, 0.4, 0.6, 1.1)), 
 
 ok(!defined(elapsed_time(1)), "error (null callback)");
 ok(!defined(elapsed_time()), "error (null argument)");
-
-done_testing();
-
 
 
 
