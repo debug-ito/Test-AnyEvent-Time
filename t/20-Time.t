@@ -2,9 +2,10 @@
 use strict;
 use warnings;
 use Test::Builder::Tester;
-use Test::More tests => 71;
+use Test::More tests => 81;
 
 BEGIN {
+    use_ok('AnyEvent::Strict');
     use_ok('Test::AnyEvent::Time');
 }
 
@@ -20,6 +21,23 @@ sub timer {
                 $cv->send();
             }
         );
+    };
+}
+
+sub multi_timer {
+    my (@times) = @_;
+    return sub {
+        my ($cv) = @_;
+        foreach my $time (@times) {
+            $cv->begin();
+            my $w; $w = AnyEvent->timer(
+                after => $time,
+                cb => sub {
+                    undef $w;
+                    $cv->end();
+                }
+            );
+        }
     };
 }
 
@@ -103,6 +121,10 @@ check_ok 0.3, ">", 0.1, "undef", ">, timeout(undef)";
 check_ok 0.2, ">", 0.1;
 check_ok 0.3, "<", 1;
 
+test_out("ok 1 - multi timers");
+time_cmp_ok(multi_timer(0, 0.3, 0.2, 1, 0.6, 0.1, 0.2), "<", 1.2, "multi timers");
+test_test("multi timers");
+
 note("-- NOT OK cases");
 check_wrong_time 0.2, ">", 0.4, undef, ">, no timeout";
 check_wrong_time 1, "<=", 0.4, undef, "<=, no timeout";
@@ -182,6 +204,13 @@ test_fail(+1);
 $ret = time_within_ok(timer(10), 0.2, "too long");
 test_err_timeout(0.2);
 test_test("time_within_ok: not ok, with desc");
+ok(!$ret);
+
+test_out("not ok 1");
+test_fail(+1);
+$ret = time_within_ok(multi_timer(0.1, 0, 0.2, 0.6, 0.3, 0.8), 0.5);
+test_err_timeout(0.5);
+test_test("time_within_ok: not ok, without desc, multi timer");
 ok(!$ret);
 
 test_out("not ok 1");
