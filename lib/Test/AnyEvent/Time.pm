@@ -6,7 +6,6 @@ use strict;
 use base ('Exporter');
 
 use AnyEvent;
-use Carp;
 use Scalar::Util qw(looks_like_number);
 use Test::Builder;
 

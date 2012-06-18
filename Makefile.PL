@@ -12,7 +12,6 @@ WriteMakefile(
       : ()),
     PL_FILES            => {},
     PREREQ_PM => {
-        'Carp' => 0,
         'Scalar::Util' => 0,
         'Test::Builder' => 0,
         'AnyEvent' => '7.01',

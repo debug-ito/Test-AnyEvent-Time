@@ -21,7 +21,6 @@ no_index:
     - inc
 requires:
   AnyEvent: 7.01
-  Carp: 0
   Scalar::Util: 0
   Test::Builder: 0
 resources:
